@@ -9,10 +9,14 @@ const int readPin = A0;
 float accumulator = 0.0;
 
 // min and max values as constrained by the safety resistors
-const float minRange = 0.042;
-const float maxRange = 0.956;
+// (observed on the NXP pedal)
+const float minRange = 0.023f;
+const float maxRange = 0.630f;
+// (observed on test 9.6kOhm pot)
+// const float minRange = 0.042;
+// const float maxRange = 0.956;
 
-const float dirThreshold = 0.0015f;
+const float dirThreshold = 0.004f;
 float reported = 0.0f;
 float highWat = 0.0f;
 float lowWat = 0.0f;
@@ -52,8 +56,9 @@ const byte pitch = 60;
 const byte velocity = 64;
 
 void loop() {
-  float rawVal = mapAnalogValue(analogRead(readPin));
-  accumulator = accumulator * 0.7f + rawVal * 0.3f;
+  int rawRead = analogRead(readPin);
+  float rawVal = mapAnalogValue(rawRead);
+  accumulator = accumulator * 0.5f + rawVal * 0.5f;
 
   // update reported value if the watermarks are crossed
   if (accumulator > highWat) {
