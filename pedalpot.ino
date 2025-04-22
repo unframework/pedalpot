@@ -17,6 +17,10 @@ float reported = 0.0f;
 float highWat = 0.0f;
 float lowWat = 0.0f;
 
+int lastSentValue = -1;         // to avoid continuously sending the same value
+int skippedCount = 0;           // occasionally resend the same value to refresh
+const int maxSkippedCount = 60; // resend once about every second
+
 float mapAnalogValue(int value) {
   float rawVal = value / 1023.0f;
 
@@ -60,8 +64,16 @@ void loop() {
     highWat = accumulator + dirThreshold;
   }
 
-  int val = reported * 1000;
-  Serial.println(val);
+  // computed value may still be slightly outside of 0..1 range, clamp it to
+  // MIDI range
+  int val = min(127, max(0, (int)(reported * 127)));
+  if (val != lastSentValue || skippedCount > maxSkippedCount) {
+    lastSentValue = val;
+    skippedCount = 0;
+    Serial.println(val);
+  } else {
+    skippedCount++;
+  }
 
   delay(15);
   // // MIDI.sendNoteOn(60, 127, 1);
