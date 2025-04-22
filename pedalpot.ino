@@ -5,8 +5,26 @@
 
 // #include "MIDIUSB.h"
 
+const int readPin = A0;
+float accumulator = 0.0;
+
+// min and max values as constrained by the safety resistors
+const float minRange = 0.042;
+const float maxRange = 0.956;
+
+float mapAnalogValue(int value) {
+  float rawVal = value / 1023.0;
+
+  // may return outside of 0..1 range! clamp this elsewhere
+  // (accumulator should not be clamped to 0..1)
+  return (rawVal - minRange) / (maxRange - minRange);
+}
+
 void setup() {
   Serial.begin(115200);
+
+  pinMode(readPin, INPUT);
+  accumulator = mapAnalogValue(analogRead(readPin));
 
   // pinMode(LED_BUILTIN, OUTPUT);
   // digitalWrite(LED_BUILTIN, LOW);
@@ -22,10 +40,13 @@ const byte pitch = 60;
 const byte velocity = 64;
 
 void loop() {
-  int val = analogRead(A0);
+  float rawVal = mapAnalogValue(analogRead(readPin));
+  accumulator = accumulator * 0.7 + rawVal * 0.3;
+
+  int val = accumulator * 1000;
   Serial.println(val);
 
-  delay(500);
+  delay(15);
   // // MIDI.sendNoteOn(60, 127, 1);
   // midiEventPacket_t noteOn = {0x09, 0x90 | channel, pitch, velocity};
   // MidiUSB.sendMIDI(noteOn);
