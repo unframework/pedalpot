@@ -12,8 +12,13 @@ float accumulator = 0.0;
 const float minRange = 0.042;
 const float maxRange = 0.956;
 
+const float dirThreshold = 0.0015f;
+float reported = 0.0f;
+float highWat = 0.0f;
+float lowWat = 0.0f;
+
 float mapAnalogValue(int value) {
-  float rawVal = value / 1023.0;
+  float rawVal = value / 1023.0f;
 
   // may return outside of 0..1 range! clamp this elsewhere
   // (accumulator should not be clamped to 0..1)
@@ -25,6 +30,9 @@ void setup() {
 
   pinMode(readPin, INPUT);
   accumulator = mapAnalogValue(analogRead(readPin));
+  reported = accumulator;
+  highWat = reported;
+  lowWat = reported;
 
   // pinMode(LED_BUILTIN, OUTPUT);
   // digitalWrite(LED_BUILTIN, LOW);
@@ -41,9 +49,18 @@ const byte velocity = 64;
 
 void loop() {
   float rawVal = mapAnalogValue(analogRead(readPin));
-  accumulator = accumulator * 0.7 + rawVal * 0.3;
+  accumulator = accumulator * 0.7f + rawVal * 0.3f;
 
-  int val = accumulator * 1000;
+  // update reported value if the watermarks are crossed
+  if (accumulator > highWat) {
+    highWat = reported = accumulator;
+    lowWat = accumulator - dirThreshold;
+  } else if (accumulator < lowWat) {
+    lowWat = reported = accumulator;
+    highWat = accumulator + dirThreshold;
+  }
+
+  int val = reported * 1000;
   Serial.println(val);
 
   delay(15);
