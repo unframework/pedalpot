@@ -21,9 +21,7 @@ float reported = 0.0f;
 float highWat = 0.0f;
 float lowWat = 0.0f;
 
-int lastSentValue = -1;         // to avoid continuously sending the same value
-int skippedCount = 0;           // occasionally resend the same value to refresh
-const int maxSkippedCount = 60; // resend once about every second
+int lastSentValue = -1; // to avoid continuously sending the same value
 
 float mapAnalogValue(int value) {
   float rawVal = value / 1023.0f;
@@ -71,17 +69,14 @@ void loop() {
   // computed value may still be slightly outside of 0..1 range, clamp it to
   // MIDI range
   int val = min(127, max(0, (int)(reported * 127)));
-  if (val != lastSentValue || skippedCount > maxSkippedCount) {
+  if (val != lastSentValue) {
     lastSentValue = val;
-    skippedCount = 0;
 
     Serial.println(val);
 
     midiEventPacket_t controlChange = {0x0B, 0xB0 | channel, control, val};
     MidiUSB.sendMIDI(controlChange);
     MidiUSB.flush();
-  } else {
-    skippedCount++;
   }
 
   delay(15);
