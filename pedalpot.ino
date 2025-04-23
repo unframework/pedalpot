@@ -3,7 +3,7 @@
 
 // BLEMIDI_CREATE_INSTANCE("PedalPot", MIDI)
 
-// #include "MIDIUSB.h"
+#include "MIDIUSB.h"
 
 const int readPin = A0;
 float accumulator = 0.0;
@@ -52,8 +52,7 @@ void setup() {
 }
 
 const byte channel = 0; // zero-based count
-const byte pitch = 60;
-const byte velocity = 64;
+const byte control = 4; // MIDI CC Foot Controller
 
 void loop() {
   int rawRead = analogRead(readPin);
@@ -75,23 +74,17 @@ void loop() {
   if (val != lastSentValue || skippedCount > maxSkippedCount) {
     lastSentValue = val;
     skippedCount = 0;
+
     Serial.println(val);
+
+    midiEventPacket_t controlChange = {0x0B, 0xB0 | channel, control, val};
+    MidiUSB.sendMIDI(controlChange);
+    MidiUSB.flush();
   } else {
     skippedCount++;
   }
 
   delay(15);
-  // // MIDI.sendNoteOn(60, 127, 1);
-  // midiEventPacket_t noteOn = {0x09, 0x90 | channel, pitch, velocity};
-  // MidiUSB.sendMIDI(noteOn);
-  // MidiUSB.flush();
-  // delay(500);
-
-  // // MIDI.sendNoteOff(60, 127, 1);
-  // midiEventPacket_t noteOff = {0x08, 0x80 | channel, pitch, velocity};
-  // MidiUSB.sendMIDI(noteOff);
-  // MidiUSB.flush();
-  // delay(1000);
 }
 
 // void OnConnected() { digitalWrite(LED_BUILTIN, HIGH); }
